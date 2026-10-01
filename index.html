@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Đăng Ký Lịch Mendan Định Kỳ</title>
+    <!-- Tailwind CSS, FontAwesome & SheetJS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; background-color: #f8fafc; } </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-200">
+                    <i class="fa-solid fa-calendar-check text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-slate-800 sm:text-base">ĐĂNG KÝ LỊCH MENDAN ĐỊNH KỲ</h1>
+                    <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">定期面談申込システム</p>
+                </div>
+            </div>
+            <button id="btn-admin-toggle" onclick="toggleAdminView()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold">
+                <i class="fa-solid fa-lock text-[10px]"></i>
+                <span id="admin-btn-text">Trang Admin</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8 flex flex-col justify-center items-center">
+        
+        <!-- THÔNG BÁO HẠN ĐĂNG KÝ -->
+        <div class="w-full max-w-md mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
+            <span class="font-medium"><i class="fa-solid fa-clock mr-1.5 text-amber-600"></i>Hạn đăng ký / sửa lịch:</span>
+            <strong id="display-deadline" class="font-bold text-amber-900">--</strong>
+        </div>
+
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP NHÂN VIÊN -->
+        <section id="screen-login" class="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl">
+            <div class="text-center mb-6">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 mb-3">
+                    <i class="fa-solid fa-user-check mr-1.5"></i> Xác thực thông tin
+                </span>
+                <h2 class="text-xl font-bold text-slate-800">Nhập Mã Số Nhân Viên</h2>
+                <p class="text-xs text-slate-500 mt-1">Đăng nhập lại nếu bạn muốn kiểm tra hoặc thay đổi lịch</p>
+            </div>
+            
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Mã Nhân Viên (社員番号)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-id-card"></i>
+                        </span>
+                        <input type="text" id="input-emp-id" required placeholder="Nhập mã NV (Ví dụ: 56576)" class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 font-medium">
+                    </div>
+                </div>
+
+                <!-- KHUNG HIỂN THỊ TỰ ĐỘNG THÔNG TIN NHÂN VIÊN -->
+                <div id="emp-info-box" class="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl space-y-1 hidden">
+                    <div class="flex items-center text-xs font-bold text-emerald-800">
+                        <i class="fa-solid fa-circle-check mr-1.5 text-emerald-600"></i> Đã xác thực thành công:
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-emerald-200/60">
+                        <div>
+                            <span class="text-slate-500 block">Họ và Tên (氏名):</span>
+                            <strong id="display-name" class="text-slate-800 font-bold text-sm">--</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Chuyền (チーム):</span>
+                            <strong id="display-team" class="text-blue-700 font-bold text-sm">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-login" disabled class="w-full py-3 px-4 bg-slate-300 text-slate-500 font-bold rounded-xl text-sm transition flex items-center justify-center space-x-2 cursor-not-allowed">
+                    <span>Xác Nhận & Tiếp Tục</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+        </section>
+
+        <!-- 2. MÀN HÌNH CHỌN KHUNG GIỜ NHÂN VIÊN -->
+        <section id="screen-select-slot" class="w-full bg-white border border-slate-200 rounded-2xl shadow-xl hidden overflow-hidden">
+            <div class="border-b border-slate-100 p-4 sm:p-5 flex flex-wrap items-center justify-between bg-slate-50/70 gap-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <p id="user-name" class="text-sm font-bold text-slate-800">--</p>
+                        <p id="user-info" class="text-xs text-slate-500">Mã NV: -- | Chuyền: --</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-xs text-slate-400 hover:text-red-500">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Đổi tài khoản
+                </button>
+            </div>
+
+            <div class="p-6 sm:p-8 space-y-6">
+                <div id="already-booked-notice" class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 hidden">
+                    <i class="fa-solid fa-info-circle mr-1"></i> Lịch hiện tại của bạn: <strong id="current-booked-label" class="text-blue-900">--</strong>.
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <i class="fa-solid fa-calendar-day text-blue-600 mr-1.5"></i>Bước 1: Chọn Ngày Mendan
+                    </label>
+                    <select id="select-date" onchange="handleDateChange(this.value)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500">
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Bước 2: Chọn Giờ Mendan Trong Ngày
+                    </label>
+                    <div id="slots-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1 min-h-[120px]">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end">
+                    <button id="btn-submit-booking" onclick="submitBooking()" disabled class="px-6 py-2.5 bg-slate-300 text-white font-bold rounded-xl text-sm transition shadow-md">
+                        Lưu Đăng Ký
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. MÀN HÌNH THÀNH CÔNG -->
+        <section id="screen-success" class="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl text-center hidden">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">Lưu Đăng Ký Thành Công!</h2>
+            <p class="text-xs text-slate-500 mt-1">Lịch mendan của bạn đã được ghi nhận trên hệ thống.</p>
+
+            <div class="my-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left space-y-2 text-xs">
+                <p><span class="text-slate-400">Họ và tên:</span> <strong id="res-name" class="text-slate-700">--</strong></p>
+                <p><span class="text-slate-400">Mã nhân viên:</span> <strong id="res-id" class="text-slate-700">--</strong></p>
+                <p><span class="text-slate-400">Chuyền:</span> <strong id="res-team" class="text-slate-700">--</strong></p>
+                <p><span class="text-slate-400">Khung giờ:</span> <strong id="res-slot" class="text-emerald-600 font-bold">--</strong></p>
+            </div>
+
+            <button onclick="location.reload()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition">
+                Hoàn Tất
+            </button>
+        </section>
+
+        <!-- 4. MÀN HÌNH ADMIN QUẢN LÝ -->
+        <section id="screen-admin" class="w-full bg-white border border-slate-200 rounded-2xl p-6 shadow-xl hidden space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Trang Quản Lý Mendan</h2>
+                    <p class="text-xs text-slate-500">Đăng nhập tài khoản: <strong id="admin-user-email" class="text-blue-600">--</strong></p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1.5 shadow-md">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Tải Excel</span>
+                    </button>
+                    <button onclick="adminLogout()" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-bold rounded-xl border border-slate-200 transition">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i>Đăng xuất Admin
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <input type="text" id="admin-search" oninput="filterAdminTable()" placeholder="🔍 Tìm theo mã NV hoặc tên..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-64 focus:outline-none focus:border-blue-500">
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <th class="p-3 font-semibold">STT</th>
+                                <th class="p-3 font-semibold">MÃ NHÂN VIÊN</th>
+                                <th class="p-3 font-semibold">HỌ VÀ TÊN</th>
+                                <th class="p-3 font-semibold">CHUYỀN</th>
+                                <th class="p-3 font-semibold">KHUNG GIỜ ĐÃ CHỌN</th>
+                                <th class="p-3 font-semibold text-center">THAO TÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-100 text-slate-700">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL ĐĂNG NHẬP ADMIN EMAIL/PASSWORD -->
+    <div id="modal-admin-login" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-800"><i class="fa-solid fa-user-shield text-blue-600 mr-2"></i>Đăng Nhập Trang Admin</h3>
+                <button onclick="closeAdminLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email Admin</label>
+                    <input type="email" id="admin-email-input" required placeholder="admin@company.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Mật khẩu</label>
+                    <input type="password" id="admin-password-input" required placeholder="••••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                <div id="admin-login-error" class="text-red-500 text-[11px] hidden font-semibold"></div>
+                <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-blue-200">
+                    Đăng Nhập Firebase Auth
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ADMIN SỬA LỊCH MENDAN (CHỌN 2 BƯỚC: NGÀY -> GIỜ) -->
+    <div id="modal-admin-edit" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-lg border border-slate-200 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-800"><i class="fa-solid fa-pen-to-square text-blue-600 mr-2"></i>Admin Điều Chỉnh Lịch Mendan</h3>
+                <button onclick="closeAdminEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
+                <p><span class="text-slate-400">Mã NV:</span> <strong id="edit-emp-id" class="text-blue-600">--</strong></p>
+                <p><span class="text-slate-400">Họ và tên:</span> <strong id="edit-emp-name" class="text-slate-800">--</strong></p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- BƯỚC 1: CHỌN NGÀY -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">Bước 1: Chọn Ngày Mendan Mới</label>
+                    <select id="admin-edit-date-select" onchange="handleAdminDateChange(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500">
+                    </select>
+                </div>
+
+                <!-- BƯỚC 2: CHỌN GIỜ -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">Bước 2: Chọn Khung Giờ Mendan</label>
+                    <div id="admin-slots-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto p-1 border border-slate-100 rounded-xl min-h-[100px]">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button onclick="closeAdminEditModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs">Hủy</button>
+                <button id="btn-save-admin-edit" onclick="saveAdminSlotEdit()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md">Lưu Đổi Lịch</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // =========================================================================
+        // ⚙️ CHỈNH SỬA HẠN CHÓT ĐĂNG KÝ CỦA NHÂN VIÊN TẠI ĐÂY:
+        // =========================================================================
+        const REGISTRATION_DEADLINE = "2026-10-13 23:59"; 
+        // =========================================================================
+
+        // ⚠️ DÁN MÃ FIREBASE CONFIG CỦA BẠN VÀO ĐÂY
+        const firebaseConfig = {
+    apiKey: "AIzaSyDBpfDzAFlBVFKQ_GLtx-7Eeb3OOQaTOEQ",
+    authDomain: "mendan-booking-6827b.firebaseapp.com",
+    projectId: "mendan-booking-6827b",
+    storageBucket: "mendan-booking-6827b.firebasestorage.app",
+    messagingSenderId: "874595079648",
+    appId: "1:874595079648:web:010015947e9db34c3e0785",
+    measurementId: "G-2NTB91DHVB"
+  };
+
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.currentUser = null;
+        window.selectedDate = null;
+        window.selectedSlot = null;
+        window.existingBooking = null;
+
+        window.adminEditingTarget = null;
+        window.adminSelectedDate = null;
+        window.adminSelectedSlot = null;
+
+        let allSlotsList = [];
+        let allRegistrations = [];
+        let employeesMap = {};
+
+        document.getElementById('display-deadline').innerText = REGISTRATION_DEADLINE;
+
+        function isDeadlinePassed() {
+            const now = new Date();
+            const deadline = new Date(REGISTRATION_DEADLINE.replace(" ", "T"));
+            return now > deadline;
+        }
+
+        // HÀM TRÍCH XUẤT NGÀY CHUẨN TỪ SLOT OBJ
+        function extractSlotDate(s) {
+            if (s.date) return s.date.trim();
+            if (s.label) {
+                const match = s.label.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);
+                if (match) return match[0];
+                return s.label.split(/[\s ]+/)[0];
+            }
+            return '';
+        }
+
+        // HÀM TRÍCH XUẤT GIỜ CHUẨN TỪ SLOT OBJ
+        function extractSlotTime(s, dateStr) {
+            if (s.time) return s.time.trim();
+            if (s.label) {
+                return s.label.replace(dateStr, '').trim();
+            }
+            return '';
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('admin-user-email').innerText = user.email;
+            }
+        });
+
+        async function loadEmployeesMap() {
+            try {
+                const snap = await getDocs(collection(db, "employees"));
+                snap.forEach(doc => {
+                    employeesMap[doc.id] = doc.data();
+                });
+            } catch(e) { console.error("Lỗi tải danh sách NV:", e); }
+        }
+        loadEmployeesMap();
+
+        // 1. TỰ ĐỘNG NHẬN DIỆN MÃ NHÂN VIÊN
+        const inputEmp = document.getElementById('input-emp-id');
+        inputEmp.addEventListener('input', async (e) => {
+            const empId = e.target.value.trim();
+            const infoBox = document.getElementById('emp-info-box');
+            const btnSubmit = document.getElementById('btn-submit-login');
+
+            if (empId.length >= 4) {
+                try {
+                    const docRef = doc(db, "employees", empId);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        window.currentUser = { emp_id: empId, name: data.name, team: data.team };
+
+                        document.getElementById('display-name').innerText = data.name;
+                        document.getElementById('display-team').innerText = data.team;
+
+                        infoBox.classList.remove('hidden');
+                        btnSubmit.disabled = false;
+                        btnSubmit.className = "w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-200 cursor-pointer";
+                    } else {
+                        infoBox.classList.add('hidden');
+                        btnSubmit.disabled = true;
+                        btnSubmit.className = "w-full py-3 px-4 bg-slate-300 text-slate-500 font-bold rounded-xl text-sm transition flex items-center justify-center space-x-2 cursor-not-allowed";
+                    }
+                } catch (err) { console.error(err); }
+            } else {
+                infoBox.classList.add('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.className = "w-full py-3 px-4 bg-slate-300 text-slate-500 font-bold rounded-xl text-sm transition flex items-center justify-center space-x-2 cursor-not-allowed";
+            }
+        });
+
+        window.handleLoginSubmit = async function(e) {
+            e.preventDefault();
+            if (!window.currentUser) return;
+
+            document.getElementById('user-name').innerText = window.currentUser.name;
+            document.getElementById('user-info').innerText = `Mã NV: ${window.currentUser.emp_id} | Chuyền: ${window.currentUser.team}`;
+
+            try {
+                const regRef = doc(db, "registrations", window.currentUser.emp_id);
+                const regSnap = await getDoc(regRef);
+
+                const noticeBox = document.getElementById('already-booked-notice');
+                if (regSnap.exists()) {
+                    window.existingBooking = regSnap.data();
+                    document.getElementById('current-booked-label').innerText = window.existingBooking.slot_label || '--';
+                    noticeBox.classList.remove('hidden');
+
+                    if (window.existingBooking.slot_label) {
+                        window.selectedDate = extractSlotDate({ label: window.existingBooking.slot_label });
+                    }
+                } else {
+                    window.existingBooking = null;
+                    noticeBox.classList.add('hidden');
+                }
+            } catch(e) { console.error(e); }
+
+            showScreen('screen-select-slot');
+            listenToSlotsRealtime();
+        };
+
+        // 2. LẮNG NGHE REALTIME KHUNG GIỜ (DÙNG CHUNG CHO CẢ NV VÀ ADMIN)
+        function listenToSlotsRealtime() {
+            onSnapshot(collection(db, "slots"), (snapshot) => {
+                allSlotsList = [];
+                snapshot.forEach(doc => allSlotsList.push({ id: doc.id, ...doc.data() }));
+                allSlotsList.sort((a, b) => a.id.localeCompare(b.id));
+
+                const datesSet = new Set();
+                allSlotsList.forEach(s => {
+                    const d = extractSlotDate(s);
+                    if (d) datesSet.add(d);
+                });
+
+                const sortedDates = Array.from(datesSet).sort();
+
+                if (!window.selectedDate && sortedDates.length > 0) {
+                    window.selectedDate = sortedDates[0];
+                }
+
+                renderDateSelectUI(sortedDates);
+                renderSlotsByDateUI();
+
+                // Nếu đang mở Modal Admin thì tự cập nhật danh sách giờ trong Modal
+                if (window.adminEditingTarget) {
+                    renderAdminSlotsGrid();
+                }
+            });
+        }
+
+        function renderDateSelectUI(dates) {
+            const select = document.getElementById('select-date');
+            if (select) {
+                select.innerHTML = dates.map(d => `<option value="${d}" ${d === window.selectedDate ? 'selected' : ''}>📅 Ngày ${d}</option>`).join('');
+            }
+        }
+
+        window.handleDateChange = function(dateStr) {
+            window.selectedDate = dateStr;
+            renderSlotsByDateUI();
+        };
+
+        function renderSlotsByDateUI() {
+            const container = document.getElementById('slots-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!window.selectedDate) return;
+
+            const filteredSlots = allSlotsList.filter(s => extractSlotDate(s) === window.selectedDate);
+            const deadlineExpired = isDeadlinePassed();
+
+            if (filteredSlots.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-6">Không có khung giờ cho ngày này.</p>`;
+                return;
+            }
+
+            filteredSlots.forEach(slot => {
+                const registeredCount = slot.registered_count || 0;
+                const maxCapacity = slot.max_capacity || 3;
+                const remaining = maxCapacity - registeredCount;
+
+                const isMyCurrentSlot = window.existingBooking && window.existingBooking.slot_id === slot.id;
+                const isFull = !isMyCurrentSlot && remaining <= 0;
+                const isSelected = (window.selectedSlot && window.selectedSlot.id === slot.id) || (!window.selectedSlot && isMyCurrentSlot);
+
+                const timeDisplay = extractSlotTime(slot, window.selectedDate);
+
+                const div = document.createElement('div');
+                div.className = `p-3.5 border rounded-xl flex items-center justify-between ${
+                    deadlineExpired || isFull ? 'bg-slate-100 opacity-50 cursor-not-allowed' :
+                    isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 cursor-pointer' : 'bg-white border-slate-200 hover:border-blue-300 cursor-pointer'
+                }`;
+
+                if (!deadlineExpired && !isFull) {
+                    div.onclick = () => selectSlot(slot);
+                }
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <input type="radio" name="slot" ${isSelected ? 'checked' : ''} ${deadlineExpired || isFull ? 'disabled' : ''}>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">⏰ ${timeDisplay} ${isMyCurrentSlot ? '<span class="text-blue-600 font-normal">(Hiện tại)</span>' : ''}</p>
+                            <p class="text-[10px] ${isFull ? 'text-red-500 font-bold' : 'text-slate-400'}">
+                                ${isFull ? 'Đã hết chỗ (3/3 người)' : `Còn trống ${remaining} chỗ`}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${isFull ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}">
+                        ${isFull ? 'Đầy' : 'Còn chỗ'}
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+
+            if (deadlineExpired) {
+                const btn = document.getElementById('btn-submit-booking');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerText = "Đã Đóng Đăng Ký (Hết Hạn)";
+                }
+            }
+        }
+
+        window.selectSlot = function(slot) {
+            window.selectedSlot = slot;
+            const btn = document.getElementById('btn-submit-booking');
+            btn.disabled = false;
+            btn.className = "px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition shadow-md cursor-pointer";
+            renderSlotsByDateUI();
+        };
+
+        // 3. ĐĂNG KÝ VẬN HÀNH BỞI NHÂN VIÊN
+        window.submitBooking = async function() {
+            if (isDeadlinePassed()) { alert("Đã qua hạn đăng ký!"); return; }
+            if (!window.selectedSlot || !window.currentUser) return;
+
+            const btn = document.getElementById('btn-submit-booking');
+            btn.disabled = true;
+            btn.innerText = "Đang lưu...";
+
+            await processSlotChange(
+                window.currentUser.emp_id, 
+                window.currentUser.name, 
+                window.currentUser.team, 
+                window.selectedSlot, 
+                window.existingBooking
+            );
+
+            document.getElementById('res-name').innerText = window.currentUser.name;
+            document.getElementById('res-id').innerText = window.currentUser.emp_id;
+            document.getElementById('res-team').innerText = window.currentUser.team;
+            document.getElementById('res-slot').innerText = window.selectedSlot.label || `${window.selectedSlot.date} ${window.selectedSlot.time}`;
+            showScreen('screen-success');
+        };
+
+        async function processSlotChange(empId, empName, empTeam, newSlot, oldBookingObj) {
+            const newSlotId = newSlot.id;
+
+            if (oldBookingObj && oldBookingObj.slot_id && oldBookingObj.slot_id !== newSlotId) {
+                const oldSlotRef = doc(db, "slots", oldBookingObj.slot_id);
+                const oldSnap = await getDoc(oldSlotRef);
+                if (oldSnap.exists()) {
+                    const oldCount = oldSnap.data().registered_count || 1;
+                    await updateDoc(oldSlotRef, { registered_count: Math.max(0, oldCount - 1) });
+                }
+            }
+
+            if (!oldBookingObj || oldBookingObj.slot_id !== newSlotId) {
+                const newSlotRef = doc(db, "slots", newSlotId);
+                const newSnap = await getDoc(newSlotRef);
+                const currentCount = newSnap.exists() ? (newSnap.data().registered_count || 0) : 0;
+                
+                if (newSnap.exists()) {
+                    await updateDoc(newSlotRef, { registered_count: currentCount + 1 });
+                } else {
+                    await setDoc(newSlotRef, { registered_count: 1, label: newSlot.label || '' }, { merge: true });
+                }
+            }
+
+            const regDocRef = doc(db, "registrations", empId);
+            const slotLabelText = newSlot.label || `${newSlot.date || ''} ${newSlot.time || ''}`;
+            
+            await setDoc(regDocRef, {
+                emp_id: empId,
+                name: empName || '',
+                team: empTeam || '',
+                slot_id: newSlotId,
+                slot_label: slotLabelText,
+                updated_at: new Date()
+            }, { merge: true });
+        }
+
+        window.showScreen = function(screenId) {
+            ['screen-login', 'screen-select-slot', 'screen-success', 'screen-admin'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        };
+
+        window.logout = function() {
+            window.currentUser = null;
+            window.selectedDate = null;
+            window.selectedSlot = null;
+            window.existingBooking = null;
+            document.getElementById('emp-info-box').classList.add('hidden');
+            document.getElementById('input-emp-id').value = '';
+            showScreen('screen-login');
+        };
+
+        // 4. TRANG ADMIN QUẢN LÝ
+        window.toggleAdminView = function() {
+            if (auth.currentUser) {
+                showAdminDashboard();
+            } else {
+                document.getElementById('modal-admin-login').classList.remove('hidden');
+            }
+        };
+
+        window.closeAdminLoginModal = function() {
+            document.getElementById('modal-admin-login').classList.add('hidden');
+        };
+
+        window.handleAdminLogin = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('admin-email-input').value.trim();
+            const password = document.getElementById('admin-password-input').value.trim();
+            const errDiv = document.getElementById('admin-login-error');
+
+            errDiv.classList.add('hidden');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeAdminLoginModal();
+                showAdminDashboard();
+            } catch (err) {
+                errDiv.innerText = "Email hoặc Mật khẩu không đúng!";
+                errDiv.classList.remove('hidden');
+            }
+        };
+
+        async function showAdminDashboard() {
+            showScreen('screen-admin');
+            document.getElementById('admin-btn-text').innerText = "Về Trang Chủ";
+            
+            // LẮNG NGHE REALTIME SLOTS ĐỂ LẤY NGÀY & GIỜ CHO ADMIN
+            listenToSlotsRealtime();
+            await loadEmployeesMap();
+            
+            const querySnapshot = await getDocs(collection(db, "registrations"));
+            allRegistrations = [];
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const empInfo = employeesMap[data.emp_id] || {};
+                data.name = data.name || empInfo.name || '';
+                data.team = data.team || empInfo.team || '';
+                allRegistrations.push(data);
+            });
+            renderAdminTable(allRegistrations);
+        }
+
+        window.adminLogout = async function() {
+            await signOut(auth);
+            showScreen('screen-login');
+            document.getElementById('admin-btn-text').innerText = "Trang Admin";
+        };
+
+        function renderAdminTable(data) {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = data.map((item, index) => {
+                const nameDisplay = item.name || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].name : '--');
+                const teamDisplay = item.team || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].team : '--');
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 text-slate-400">${index + 1}</td>
+                        <td class="p-3 font-bold text-blue-600">${item.emp_id}</td>
+                        <td class="p-3 font-medium text-slate-800">${nameDisplay}</td>
+                        <td class="p-3 text-slate-600">${teamDisplay}</td>
+                        <td class="p-3 font-semibold text-emerald-700">${item.slot_label || '--'}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="openAdminEditModal('${item.emp_id}', '${nameDisplay}', '${item.slot_id || ''}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition text-[11px]">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>Sửa Lịch
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // LOGIC MODAL ADMIN SỬA LỊCH (BỎ QUA DEADLINE)
+        // =========================================================================
+        window.openAdminEditModal = function(empId, empName, currentSlotId) {
+            const empInfo = employeesMap[empId] || {};
+            const realName = empName && empName !== '--' ? empName : (empInfo.name || empId);
+            const realTeam = empInfo.team || '';
+
+            window.adminEditingTarget = { emp_id: empId, name: realName, team: realTeam, currentSlotId: currentSlotId };
+            
+            document.getElementById('edit-emp-id').innerText = empId;
+            document.getElementById('edit-emp-name').innerText = realName;
+
+            const currentSlotObj = allSlotsList.find(s => s.id === currentSlotId);
+            window.adminSelectedSlot = currentSlotObj || null;
+
+            // TÁCH TẤT CẢ CÁC NGÀY DUY NHẤT TỪ ALLSLOTSLIST
+            const datesSet = new Set();
+            allSlotsList.forEach(s => {
+                const d = extractSlotDate(s);
+                if (d) datesSet.add(d);
+            });
+            const sortedDates = Array.from(datesSet).sort();
+
+            if (currentSlotObj) {
+                window.adminSelectedDate = extractSlotDate(currentSlotObj) || sortedDates[0];
+            } else {
+                window.adminSelectedDate = sortedDates[0] || null;
+            }
+
+            // HỂN THỊ DROPDOWN CHỌN NGÀY BƯỚC 1
+            const selectDate = document.getElementById('admin-edit-date-select');
+            selectDate.innerHTML = sortedDates.map(d => `<option value="${d}" ${d === window.adminSelectedDate ? 'selected' : ''}>📅 Ngày ${d}</option>`).join('');
+
+            // HIỂN THỊ DANH SÁCH GIỜ BƯỚC 2
+            renderAdminSlotsGrid();
+
+            document.getElementById('modal-admin-edit').classList.remove('hidden');
+        };
+
+        window.handleAdminDateChange = function(dateStr) {
+            window.adminSelectedDate = dateStr;
+            window.adminSelectedSlot = null; // Reset slot khi chuyển sang ngày khác
+            renderAdminSlotsGrid();
+        };
+
+        function renderAdminSlotsGrid() {
+            const grid = document.getElementById('admin-slots-grid');
+            grid.innerHTML = '';
+
+            if (!window.adminSelectedDate) {
+                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Đang tải danh sách khung giờ...</p>`;
+                return;
+            }
+
+            const filteredSlots = allSlotsList.filter(s => extractSlotDate(s) === window.adminSelectedDate);
+
+            if (filteredSlots.length === 0) {
+                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Không có khung giờ nào cho ngày này.</p>`;
+                return;
+            }
+
+            filteredSlots.forEach(slot => {
+                const regCount = slot.registered_count || 0;
+                const timeDisplay = extractSlotTime(slot, window.adminSelectedDate);
+                const isSelected = window.adminSelectedSlot && window.adminSelectedSlot.id === slot.id;
+                const isCurrentOfUser = window.adminEditingTarget && window.adminEditingTarget.currentSlotId === slot.id;
+
+                const div = document.createElement('div');
+                div.className = `p-2.5 border rounded-xl flex items-center justify-between cursor-pointer transition ${
+                    isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'
+                }`;
+
+                div.onclick = () => {
+                    window.adminSelectedSlot = slot;
+                    renderAdminSlotsGrid();
+                };
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="admin_slot_radio" ${isSelected ? 'checked' : ''}>
+                        <div class="text-xs font-bold text-slate-800">
+                            ⏰ ${timeDisplay} ${isCurrentOfUser ? '<span class="text-blue-600 font-normal">(Hiện tại)</span>' : ''}
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${regCount >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
+                        Đã đăng ký: ${regCount}/3
+                    </span>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        window.closeAdminEditModal = function() {
+            document.getElementById('modal-admin-edit').classList.add('hidden');
+            window.adminEditingTarget = null;
+            window.adminSelectedSlot = null;
+        };
+
+        window.saveAdminSlotEdit = async function() {
+            if (!window.adminEditingTarget) return;
+
+            if (!window.adminSelectedSlot) {
+                alert("Vui lòng nhấp chọn 1 khung giờ mendan mới!");
+                return;
+            }
+
+            const btnSave = document.getElementById('btn-save-admin-edit');
+            btnSave.disabled = true;
+            btnSave.innerText = "Đang lưu...";
+
+            const empId = window.adminEditingTarget.emp_id;
+            const empName = window.adminEditingTarget.name;
+            const empTeam = window.adminEditingTarget.team;
+            const newSlot = window.adminSelectedSlot;
+            const oldSlotId = window.adminEditingTarget.currentSlotId;
+
+            try {
+                // 1. Giảm số lượng đăng ký ở slot cũ (nếu chuyển từ slot cũ sang)
+                if (oldSlotId && oldSlotId !== newSlot.id) {
+                    const oldSlotRef = doc(db, "slots", oldSlotId);
+                    const oldSnap = await getDoc(oldSlotRef);
+                    if (oldSnap.exists()) {
+                        const oldCount = oldSnap.data().registered_count || 1;
+                        await updateDoc(oldSlotRef, { registered_count: Math.max(0, oldCount - 1) });
+                    }
+                }
+
+                // 2. Tăng số lượng đăng ký ở slot mới
+                if (oldSlotId !== newSlot.id) {
+                    const newSlotRef = doc(db, "slots", newSlot.id);
+                    const newSnap = await getDoc(newSlotRef);
+                    const currentCount = newSnap.exists() ? (newSnap.data().registered_count || 0) : 0;
+                    await setDoc(newSlotRef, { registered_count: currentCount + 1 }, { merge: true });
+                }
+
+                // 3. Cập nhật vào registrations
+                const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))}`;
+                await setDoc(doc(db, "registrations", empId), {
+                    emp_id: empId,
+                    name: empName || '',
+                    team: empTeam || '',
+                    slot_id: newSlot.id,
+                    slot_label: slotLabelText,
+                    updated_at: new Date()
+                }, { merge: true });
+
+                alert(`Đã đổi lịch cho NV ${empId} (${empName}) sang khung giờ: ${slotLabelText}`);
+                closeAdminEditModal();
+                showAdminDashboard();
+            } catch (err) {
+                console.error("Lỗi Admin sửa lịch:", err);
+                alert("Lỗi khi sửa lịch: " + (err.message || err));
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerText = "Lưu Đổi Lịch";
+            }
+        };
+
+        window.filterAdminTable = function() {
+            const keyword = document.getElementById('admin-search').value.toLowerCase();
+            const filtered = allRegistrations.filter(r => 
+                r.emp_id.toLowerCase().includes(keyword) || 
+                (r.name && r.name.toLowerCase().includes(keyword)) ||
+                (r.team && r.team.toLowerCase().includes(keyword))
+            );
+            renderAdminTable(filtered);
+        };
+
+        window.exportToExcel = function() {
+            if (allRegistrations.length === 0) { alert("Chưa có dữ liệu đăng ký!"); return; }
+            const excelData = allRegistrations.map(r => ({
+                'MÃ NHÂN VIÊN': r.emp_id,
+                'HỌ VÀ TÊN': r.name || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].name : ''),
+                'CHUYỀN': r.team || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].team : ''),
+                'KHUNG GIỜ': r.slot_label
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "申込表");
+            XLSX.writeFile(workbook, "Phieu_Dang_Ky_Mendan.xlsx");
+        };
+    </script>
+</body>
+</html>
