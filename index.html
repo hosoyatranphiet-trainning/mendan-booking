@@ -217,7 +217,7 @@
         </div>
     </div>
 
-    <!-- MODAL ADMIN SỬA LỊCH MENDAN (CHỌN 2 BƯỚC: NGÀY -> GIỜ) -->
+    <!-- MODAL ADMIN SỬA LỊCH MENDAN -->
     <div id="modal-admin-edit" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-2xl p-6 w-full max-w-lg border border-slate-200 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -231,14 +231,12 @@
             </div>
 
             <div class="space-y-4">
-                <!-- BƯỚC 1: CHỌN NGÀY -->
                 <div class="space-y-1.5">
                     <label class="block text-xs font-bold text-slate-700">Bước 1: Chọn Ngày Mendan Mới</label>
                     <select id="admin-edit-date-select" onchange="handleAdminDateChange(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500">
                     </select>
                 </div>
 
-                <!-- BƯỚC 2: CHỌN GIỜ -->
                 <div class="space-y-1.5">
                     <label class="block text-xs font-bold text-slate-700">Bước 2: Chọn Khung Giờ Mendan</label>
                     <div id="admin-slots-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto p-1 border border-slate-100 rounded-xl min-h-[100px]">
@@ -257,16 +255,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // =========================================================================
-        // ⚙️ CHỈNH SỬA HẠN CHÓT ĐĂNG KÝ CỦA NHÂN VIÊN TẠI ĐÂY:
+        // ⚙️ CHỈNH SỬA HẠN CHÓT ĐĂNG KÝ TẠI ĐÂY:
         // =========================================================================
         const REGISTRATION_DEADLINE = "2026-10-15 23:59"; 
         // =========================================================================
 
-        // ⚠️ DÁN MÃ FIREBASE CONFIG CỦA BẠN VÀO ĐÂY
-        const firebaseConfig = {
+       const firebaseConfig = {
     apiKey: "AIzaSyDBpfDzAFlBVFKQ_GLtx-7Eeb3OOQaTOEQ",
     authDomain: "mendan-booking-6827b.firebaseapp.com",
     projectId: "mendan-booking-6827b",
@@ -293,6 +290,7 @@
         let allSlotsList = [];
         let allRegistrations = [];
         let employeesMap = {};
+        let slotCountMap = {}; // BẮT BẢNG ĐẾM TRỰC TIẾP TỪ REGISTRATIONS
 
         document.getElementById('display-deadline').innerText = REGISTRATION_DEADLINE;
 
@@ -302,8 +300,8 @@
             return now > deadline;
         }
 
-        // HÀM TRÍCH XUẤT NGÀY CHUẨN TỪ SLOT OBJ
         function extractSlotDate(s) {
+            if (!s) return '';
             if (s.date) return s.date.trim();
             if (s.label) {
                 const match = s.label.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);
@@ -313,8 +311,8 @@
             return '';
         }
 
-        // HÀM TRÍCH XUẤT GIỜ CHUẨN TỪ SLOT OBJ
         function extractSlotTime(s, dateStr) {
+            if (!s) return '';
             if (s.time) return s.time.trim();
             if (s.label) {
                 return s.label.replace(dateStr, '').trim();
@@ -338,7 +336,28 @@
         }
         loadEmployeesMap();
 
-        // 1. TỰ ĐỘNG NHẬN DIỆN MÃ NHÂN VIÊN
+        // LẮNG NGHE BẢNG REGISTRATIONS DỂ TÍNH TOÁN SỐ NGƯỜI ĐÃ ĐĂNG KÝ CHÍNH XÁC REALTIME
+        function listenToRegistrationsRealtime() {
+            onSnapshot(collection(db, "registrations"), (snapshot) => {
+                slotCountMap = {};
+                allRegistrations = [];
+                snapshot.forEach(doc => {
+                    const reg = doc.data();
+                    allRegistrations.push(reg);
+                    if (reg.slot_id) {
+                        slotCountMap[reg.slot_id] = (slotCountMap[reg.slot_id] || 0) + 1;
+                    }
+                });
+                renderSlotsByDateUI();
+                if (window.adminEditingTarget) renderAdminSlotsGrid();
+                if (!document.getElementById('screen-admin').classList.contains('hidden')) {
+                    renderAdminTable(allRegistrations);
+                }
+            });
+        }
+        listenToRegistrationsRealtime();
+
+        // 1. MÀN HÌNH ĐĂNG NHẬP
         const inputEmp = document.getElementById('input-emp-id');
         inputEmp.addEventListener('input', async (e) => {
             const empId = e.target.value.trim();
@@ -403,7 +422,7 @@
             listenToSlotsRealtime();
         };
 
-        // 2. LẮNG NGHE REALTIME KHUNG GIỜ (DÙNG CHUNG CHO CẢ NV VÀ ADMIN)
+        // 2. LẮNG NGHE REALTIME KHUNG GIỜ
         function listenToSlotsRealtime() {
             onSnapshot(collection(db, "slots"), (snapshot) => {
                 allSlotsList = [];
@@ -425,7 +444,6 @@
                 renderDateSelectUI(sortedDates);
                 renderSlotsByDateUI();
 
-                // Nếu đang mở Modal Admin thì tự cập nhật danh sách giờ trong Modal
                 if (window.adminEditingTarget) {
                     renderAdminSlotsGrid();
                 }
@@ -460,7 +478,8 @@
             }
 
             filteredSlots.forEach(slot => {
-                const registeredCount = slot.registered_count || 0;
+                // TÍNH SỐ NGUỜI ĐĂNG KÝ THỰC TẾ TỪ SLOTCOUNTMAP
+                const registeredCount = slotCountMap[slot.id] || 0;
                 const maxCapacity = slot.max_capacity || 3;
                 const remaining = maxCapacity - registeredCount;
 
@@ -486,7 +505,7 @@
                         <div>
                             <p class="text-xs font-bold text-slate-800">⏰ ${timeDisplay} ${isMyCurrentSlot ? '<span class="text-blue-600 font-normal">(Hiện tại)</span>' : ''}</p>
                             <p class="text-[10px] ${isFull ? 'text-red-500 font-bold' : 'text-slate-400'}">
-                                ${isFull ? 'Đã hết chỗ (3/3 người)' : `Còn trống ${remaining} chỗ`}
+                                ${isFull ? 'Đã hết chỗ (3/3 người)' : `Còn trống ${Math.max(0, remaining)} chỗ`}
                             </p>
                         </div>
                     </div>
@@ -527,8 +546,7 @@
                 window.currentUser.emp_id, 
                 window.currentUser.name, 
                 window.currentUser.team, 
-                window.selectedSlot, 
-                window.existingBooking
+                window.selectedSlot
             );
 
             document.getElementById('res-name').innerText = window.currentUser.name;
@@ -538,41 +556,22 @@
             showScreen('screen-success');
         };
 
-        async function processSlotChange(empId, empName, empTeam, newSlot, oldBookingObj) {
-            const newSlotId = newSlot.id;
-
-            if (oldBookingObj && oldBookingObj.slot_id && oldBookingObj.slot_id !== newSlotId) {
-                const oldSlotRef = doc(db, "slots", oldBookingObj.slot_id);
-                const oldSnap = await getDoc(oldSlotRef);
-                if (oldSnap.exists()) {
-                    const oldCount = oldSnap.data().registered_count || 1;
-                    await updateDoc(oldSlotRef, { registered_count: Math.max(0, oldCount - 1) });
-                }
-            }
-
-            if (!oldBookingObj || oldBookingObj.slot_id !== newSlotId) {
-                const newSlotRef = doc(db, "slots", newSlotId);
-                const newSnap = await getDoc(newSlotRef);
-                const currentCount = newSnap.exists() ? (newSnap.data().registered_count || 0) : 0;
-                
-                if (newSnap.exists()) {
-                    await updateDoc(newSlotRef, { registered_count: currentCount + 1 });
-                } else {
-                    await setDoc(newSlotRef, { registered_count: 1, label: newSlot.label || '' }, { merge: true });
-                }
-            }
-
-            const regDocRef = doc(db, "registrations", empId);
-            const slotLabelText = newSlot.label || `${newSlot.date || ''} ${newSlot.time || ''}`;
+        async function processSlotChange(empId, empName, empTeam, newSlot) {
+            const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))}`;
             
-            await setDoc(regDocRef, {
+            // LƯU ĐẦY ĐỦ TRỰC TIẾP VÀO BẢNG REGISTRATIONS
+            await setDoc(doc(db, "registrations", empId), {
                 emp_id: empId,
                 name: empName || '',
                 team: empTeam || '',
-                slot_id: newSlotId,
+                slot_id: newSlot.id,
                 slot_label: slotLabelText,
                 updated_at: new Date()
             }, { merge: true });
+
+            // ĐỒNG BỘ ĐẾM VÀO COLLECTION SLOTS
+            const newCount = (slotCountMap[newSlot.id] || 0) + 1;
+            await setDoc(doc(db, "slots", newSlot.id), { registered_count: newCount }, { merge: true });
         }
 
         window.showScreen = function(screenId) {
@@ -593,13 +592,24 @@
         };
 
         // 4. TRANG ADMIN QUẢN LÝ
-        window.toggleAdminView = function() {
-            if (auth.currentUser) {
-                showAdminDashboard();
-            } else {
-                document.getElementById('modal-admin-login').classList.remove('hidden');
-            }
-        };
+        // CẬP NHẬT HÀM NÚT TRANG ADMIN / VỀ TRANG CHỦ
+window.toggleAdminView = function() {
+    const adminScreen = document.getElementById('screen-admin');
+    
+    // Nếu đang ở màn hình Admin -> Bấm nút sẽ chuyển về Màn hình Đăng nhập Nhân viên
+    if (!adminScreen.classList.contains('hidden')) {
+        showScreen('screen-login');
+        document.getElementById('admin-btn-text').innerText = "Trang Admin";
+        return;
+    }
+
+    // Nếu đang ở ngoài -> Kiểm tra đăng nhập Admin
+    if (auth.currentUser) {
+        showAdminDashboard();
+    } else {
+        document.getElementById('modal-admin-login').classList.remove('hidden');
+    }
+};
 
         window.closeAdminLoginModal = function() {
             document.getElementById('modal-admin-login').classList.add('hidden');
@@ -627,19 +637,8 @@
             showScreen('screen-admin');
             document.getElementById('admin-btn-text').innerText = "Về Trang Chủ";
             
-            // LẮNG NGHE REALTIME SLOTS ĐỂ LẤY NGÀY & GIỜ CHO ADMIN
             listenToSlotsRealtime();
             await loadEmployeesMap();
-            
-            const querySnapshot = await getDocs(collection(db, "registrations"));
-            allRegistrations = [];
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                const empInfo = employeesMap[data.emp_id] || {};
-                data.name = data.name || empInfo.name || '';
-                data.team = data.team || empInfo.team || '';
-                allRegistrations.push(data);
-            });
             renderAdminTable(allRegistrations);
         }
 
@@ -651,6 +650,7 @@
 
         function renderAdminTable(data) {
             const tbody = document.getElementById('admin-table-body');
+            if (!tbody) return;
             tbody.innerHTML = data.map((item, index) => {
                 const nameDisplay = item.name || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].name : '--');
                 const teamDisplay = item.team || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].team : '--');
@@ -673,7 +673,7 @@
         }
 
         // =========================================================================
-        // LOGIC MODAL ADMIN SỬA LỊCH (BỎ QUA DEADLINE)
+        // MODAL ADMIN SỬA LỊCH
         // =========================================================================
         window.openAdminEditModal = function(empId, empName, currentSlotId) {
             const empInfo = employeesMap[empId] || {};
@@ -688,7 +688,6 @@
             const currentSlotObj = allSlotsList.find(s => s.id === currentSlotId);
             window.adminSelectedSlot = currentSlotObj || null;
 
-            // TÁCH TẤT CẢ CÁC NGÀY DUY NHẤT TỪ ALLSLOTSLIST
             const datesSet = new Set();
             allSlotsList.forEach(s => {
                 const d = extractSlotDate(s);
@@ -702,11 +701,9 @@
                 window.adminSelectedDate = sortedDates[0] || null;
             }
 
-            // HỂN THỊ DROPDOWN CHỌN NGÀY BƯỚC 1
             const selectDate = document.getElementById('admin-edit-date-select');
             selectDate.innerHTML = sortedDates.map(d => `<option value="${d}" ${d === window.adminSelectedDate ? 'selected' : ''}>📅 Ngày ${d}</option>`).join('');
 
-            // HIỂN THỊ DANH SÁCH GIỜ BƯỚC 2
             renderAdminSlotsGrid();
 
             document.getElementById('modal-admin-edit').classList.remove('hidden');
@@ -714,12 +711,13 @@
 
         window.handleAdminDateChange = function(dateStr) {
             window.adminSelectedDate = dateStr;
-            window.adminSelectedSlot = null; // Reset slot khi chuyển sang ngày khác
+            window.adminSelectedSlot = null;
             renderAdminSlotsGrid();
         };
 
         function renderAdminSlotsGrid() {
             const grid = document.getElementById('admin-slots-grid');
+            if (!grid) return;
             grid.innerHTML = '';
 
             if (!window.adminSelectedDate) {
@@ -735,7 +733,7 @@
             }
 
             filteredSlots.forEach(slot => {
-                const regCount = slot.registered_count || 0;
+                const regCount = slotCountMap[slot.id] || 0;
                 const timeDisplay = extractSlotTime(slot, window.adminSelectedDate);
                 const isSelected = window.adminSelectedSlot && window.adminSelectedSlot.id === slot.id;
                 const isCurrentOfUser = window.adminEditingTarget && window.adminEditingTarget.currentSlotId === slot.id;
@@ -787,39 +785,12 @@
             const empName = window.adminEditingTarget.name;
             const empTeam = window.adminEditingTarget.team;
             const newSlot = window.adminSelectedSlot;
-            const oldSlotId = window.adminEditingTarget.currentSlotId;
 
             try {
-                // 1. Giảm số lượng đăng ký ở slot cũ (nếu chuyển từ slot cũ sang)
-                if (oldSlotId && oldSlotId !== newSlot.id) {
-                    const oldSlotRef = doc(db, "slots", oldSlotId);
-                    const oldSnap = await getDoc(oldSlotRef);
-                    if (oldSnap.exists()) {
-                        const oldCount = oldSnap.data().registered_count || 1;
-                        await updateDoc(oldSlotRef, { registered_count: Math.max(0, oldCount - 1) });
-                    }
-                }
+                await processSlotChange(empId, empName, empTeam, newSlot);
 
-                // 2. Tăng số lượng đăng ký ở slot mới
-                if (oldSlotId !== newSlot.id) {
-                    const newSlotRef = doc(db, "slots", newSlot.id);
-                    const newSnap = await getDoc(newSlotRef);
-                    const currentCount = newSnap.exists() ? (newSnap.data().registered_count || 0) : 0;
-                    await setDoc(newSlotRef, { registered_count: currentCount + 1 }, { merge: true });
-                }
-
-                // 3. Cập nhật vào registrations
                 const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))}`;
-                await setDoc(doc(db, "registrations", empId), {
-                    emp_id: empId,
-                    name: empName || '',
-                    team: empTeam || '',
-                    slot_id: newSlot.id,
-                    slot_label: slotLabelText,
-                    updated_at: new Date()
-                }, { merge: true });
-
-                alert(`Đã đổi lịch cho NV ${empId} (${empName}) sang khung giờ: ${slotLabelText}`);
+                alert(`Thành công: Đã đổi lịch cho NV ${empId} (${empName}) sang khung giờ: ${slotLabelText}`);
                 closeAdminEditModal();
                 showAdminDashboard();
             } catch (err) {
