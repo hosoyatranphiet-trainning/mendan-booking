@@ -33,7 +33,7 @@
     </header>
 
     <!-- MAIN CONTAINER -->
-    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8 flex flex-col justify-center items-center">
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-8 flex flex-col justify-center items-center">
         
         <!-- THÔNG BÁO HẠN ĐĂNG KÝ -->
         <div class="w-full max-w-md mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
@@ -86,7 +86,7 @@
             </form>
         </section>
 
-        <!-- 2. MÀN HÌNH CHỌN KHUNG GIỜ NHÂN VIÊN -->
+        <!-- 2. MÀN HÌNH CHỌN LỊCH 4 BƯỚC -->
         <section id="screen-select-slot" class="w-full bg-white border border-slate-200 rounded-2xl shadow-xl hidden overflow-hidden">
             <div class="border-b border-slate-100 p-4 sm:p-5 flex flex-wrap items-center justify-between bg-slate-50/70 gap-2">
                 <div class="flex items-center space-x-3">
@@ -103,24 +103,46 @@
                 </button>
             </div>
 
-            <div class="p-6 sm:p-8 space-y-6">
+            <div class="p-6 sm:p-8 space-y-5">
                 <div id="already-booked-notice" class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 hidden">
                     <i class="fa-solid fa-info-circle mr-1"></i> Lịch hiện tại của bạn: <strong id="current-booked-label" class="text-blue-900">--</strong>.
                 </div>
 
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        <i class="fa-solid fa-calendar-day text-blue-600 mr-1.5"></i>Bước 1: Chọn Ngày Mendan
-                    </label>
-                    <select id="select-date" onchange="handleDateChange(this.value)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500">
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- BƯỚC 1: CHỌN BỘ PHẬN -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            <i class="fa-solid fa-sitemap text-blue-600 mr-1"></i>Bước 1: Bộ Phận
+                        </label>
+                        <select id="select-dept" onchange="handleDeptChange(this.value)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500">
+                        </select>
+                    </div>
+
+                    <!-- BƯỚC 2: CHỌN NGÀY -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            <i class="fa-solid fa-calendar-day text-blue-600 mr-1"></i>Bước 2: Chọn Ngày
+                        </label>
+                        <select id="select-date" onchange="handleDateChange(this.value)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500">
+                        </select>
+                    </div>
+
+                    <!-- BƯỚC 3: CHỌN BUỔI -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            <i class="fa-solid fa-sun text-amber-500 mr-1"></i>Bước 3: Buổi (時間帯)
+                        </label>
+                        <select id="select-period" onchange="handlePeriodChange(this.value)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500">
+                        </select>
+                    </div>
                 </div>
 
-                <div class="space-y-2">
+                <!-- BƯỚC 4: CHỌN GIỜ MENDAN TƯƠNG ỨNG -->
+                <div class="space-y-1.5 pt-2">
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        <i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Bước 2: Chọn Giờ Mendan Trong Ngày
+                        <i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Bước 4: Chọn Khung Giờ Mendan Tương Ứng
                     </label>
-                    <div id="slots-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1 min-h-[120px]">
+                    <div id="slots-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[260px] overflow-y-auto pr-1 min-h-[120px]">
                     </div>
                 </div>
 
@@ -171,7 +193,7 @@
             </div>
 
             <div class="space-y-3">
-                <input type="text" id="admin-search" oninput="filterAdminTable()" placeholder="🔍 Tìm theo mã NV hoặc tên..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-64 focus:outline-none focus:border-blue-500">
+                <input type="text" id="admin-search" oninput="filterAdminTable()" placeholder="🔍 Tìm theo mã NV, tên, bộ phận..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-72 focus:outline-none focus:border-blue-500">
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
@@ -180,6 +202,7 @@
                                 <th class="p-3 font-semibold">MÃ NHÂN VIÊN</th>
                                 <th class="p-3 font-semibold">HỌ VÀ TÊN</th>
                                 <th class="p-3 font-semibold">CHUYỀN</th>
+                                <th class="p-3 font-semibold">BỘ PHẬN</th>
                                 <th class="p-3 font-semibold">KHUNG GIỜ ĐÃ CHỌN</th>
                                 <th class="p-3 font-semibold text-center">THAO TÁC</th>
                             </tr>
@@ -193,7 +216,7 @@
 
     </main>
 
-    <!-- MODAL ĐĂNG NHẬP ADMIN EMAIL/PASSWORD -->
+    <!-- MODAL ĐĂNG NHẬP ADMIN -->
     <div id="modal-admin-login" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -230,17 +253,27 @@
                 <p><span class="text-slate-400">Họ và tên:</span> <strong id="edit-emp-name" class="text-slate-800">--</strong></p>
             </div>
 
-            <div class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-700">Bước 1: Chọn Ngày Mendan Mới</label>
-                    <select id="admin-edit-date-select" onchange="handleAdminDateChange(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500">
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">1. Bộ Phận</label>
+                    <select id="admin-edit-dept-select" onchange="handleAdminDeptChange(this.value)" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500">
                     </select>
                 </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">2. Ngày</label>
+                    <select id="admin-edit-date-select" onchange="handleAdminDateChange(this.value)" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">3. Buổi</label>
+                    <select id="admin-edit-period-select" onchange="handleAdminPeriodChange(this.value)" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500">
+                    </select>
+                </div>
+            </div>
 
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-700">Bước 2: Chọn Khung Giờ Mendan</label>
-                    <div id="admin-slots-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto p-1 border border-slate-100 rounded-xl min-h-[100px]">
-                    </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">4. Chọn Khung Giờ</label>
+                <div id="admin-slots-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[180px] overflow-y-auto p-1 border border-slate-100 rounded-xl min-h-[90px]">
                 </div>
             </div>
 
@@ -255,14 +288,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // =========================================================================
-        // ⚙️ CHỈNH SỬA HẠN CHÓT ĐĂNG KÝ TẠI ĐÂY:
+        // ⚙️ HẠN CHÓT ĐĂNG KÝ CỦA NHÂN VIÊN:
         // =========================================================================
         const REGISTRATION_DEADLINE = "2026-10-15 23:59"; 
         // =========================================================================
 
+        // THAY BẰNG CẤU HÌNH FIREBASE CỦA BẠN TẠI ĐÂY:
        const firebaseConfig = {
     apiKey: "AIzaSyDBpfDzAFlBVFKQ_GLtx-7Eeb3OOQaTOEQ",
     authDomain: "mendan-booking-6827b.firebaseapp.com",
@@ -274,23 +308,28 @@
   };
 
 
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         window.currentUser = null;
+        window.selectedDept = null;
         window.selectedDate = null;
+        window.selectedPeriod = null;
         window.selectedSlot = null;
         window.existingBooking = null;
 
         window.adminEditingTarget = null;
+        window.adminSelectedDept = null;
         window.adminSelectedDate = null;
+        window.adminSelectedPeriod = null;
         window.adminSelectedSlot = null;
 
         let allSlotsList = [];
         let allRegistrations = [];
         let employeesMap = {};
-        let slotCountMap = {}; // BẮT BẢNG ĐẾM TRỰC TIẾP TỪ REGISTRATIONS
+        let slotCountMap = {};
 
         document.getElementById('display-deadline').innerText = REGISTRATION_DEADLINE;
 
@@ -300,24 +339,71 @@
             return now > deadline;
         }
 
+        function extractSlotDept(s) {
+            if (!s) return 'Tất cả';
+            if (s.department) return String(s.department).trim();
+            if (s.label && s.label.includes('(') && s.label.includes(')')) {
+                return s.label.split('(')[1].replace(')', '').trim();
+            }
+            return 'Tất cả';
+        }
+
+        function extractSlotPeriod(s) {
+            if (!s) return 'SÁNG';
+            if (s.period) return String(s.period).trim().toUpperCase();
+            return 'SÁNG';
+        }
+
         function extractSlotDate(s) {
             if (!s) return '';
-            if (s.date) return s.date.trim();
+            if (s.date) return formatJapanDate(s.date);
             if (s.label) {
-                const match = s.label.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);
-                if (match) return match[0];
-                return s.label.split(/[\s ]+/)[0];
+                const match = s.label.match(/\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4}/);
+                if (match) return formatJapanDate(match[0]);
+                return formatJapanDate(s.label.split(/[\s ]+/)[0]);
             }
             return '';
         }
 
         function extractSlotTime(s, dateStr) {
             if (!s) return '';
-            if (s.time) return s.time.trim();
+            if (s.time) return String(s.time).trim();
             if (s.label) {
-                return s.label.replace(dateStr, '').trim();
+                let text = s.label;
+                if (dateStr) text = text.replace(dateStr, '');
+                return text.replace(/\(.*\)/, '').trim();
             }
             return '';
+        }
+
+        function formatJapanDate(rawStr) {
+            if (!rawStr) return '';
+            let s = String(rawStr).trim().replace(/-/g, '/');
+            const parts = s.split('/');
+            
+            if (parts.length === 3) {
+                let p1 = parts[0].trim();
+                let p2 = parts[1].trim();
+                let p3 = parts[2].trim();
+
+                if (p1.length <= 2 && p2.length <= 2) {
+                    let y = p3.length === 2 ? '20' + p3 : p3;
+                    let m = p1.padStart(2, '0');
+                    let d = p2.padStart(2, '0');
+                    return `${y}/${m}/${d}`;
+                }
+                if (p1.length === 4) {
+                    let m = p2.padStart(2, '0');
+                    let d = p3.padStart(2, '0');
+                    return `${p1}/${m}/${d}`;
+                }
+            }
+            return s;
+        }
+
+        function getCleanSlotLabel(fullLabel) {
+            if (!fullLabel) return '--';
+            return fullLabel.split('(')[0].trim();
         }
 
         onAuthStateChanged(auth, (user) => {
@@ -336,7 +422,6 @@
         }
         loadEmployeesMap();
 
-        // LẮNG NGHE BẢNG REGISTRATIONS DỂ TÍNH TOÁN SỐ NGƯỜI ĐÃ ĐĂNG KÝ CHÍNH XÁC REALTIME
         function listenToRegistrationsRealtime() {
             onSnapshot(collection(db, "registrations"), (snapshot) => {
                 slotCountMap = {};
@@ -357,7 +442,7 @@
         }
         listenToRegistrationsRealtime();
 
-        // 1. MÀN HÌNH ĐĂNG NHẬP
+        // 1. MÀN HÌNH ĐĂNG NHẬP NHÂN VIÊN
         const inputEmp = document.getElementById('input-emp-id');
         inputEmp.addEventListener('input', async (e) => {
             const empId = e.target.value.trim();
@@ -408,10 +493,6 @@
                     window.existingBooking = regSnap.data();
                     document.getElementById('current-booked-label').innerText = window.existingBooking.slot_label || '--';
                     noticeBox.classList.remove('hidden');
-
-                    if (window.existingBooking.slot_label) {
-                        window.selectedDate = extractSlotDate({ label: window.existingBooking.slot_label });
-                    }
                 } else {
                     window.existingBooking = null;
                     noticeBox.classList.add('hidden');
@@ -422,32 +503,56 @@
             listenToSlotsRealtime();
         };
 
-        // 2. LẮNG NGHE REALTIME KHUNG GIỜ
+        // 2. LẮNG NGHE REALTIME SLOTS VÀ ĐỒNG BỘ CÁC LỰA CHỌN
         function listenToSlotsRealtime() {
             onSnapshot(collection(db, "slots"), (snapshot) => {
                 allSlotsList = [];
                 snapshot.forEach(doc => allSlotsList.push({ id: doc.id, ...doc.data() }));
                 allSlotsList.sort((a, b) => a.id.localeCompare(b.id));
 
-                const datesSet = new Set();
-                allSlotsList.forEach(s => {
-                    const d = extractSlotDate(s);
-                    if (d) datesSet.add(d);
-                });
+                const deptSet = new Set();
+                allSlotsList.forEach(s => deptSet.add(extractSlotDept(s)));
+                const sortedDepts = Array.from(deptSet).sort();
 
-                const sortedDates = Array.from(datesSet).sort();
-
-                if (!window.selectedDate && sortedDates.length > 0) {
-                    window.selectedDate = sortedDates[0];
+                if (!window.selectedDept || !sortedDepts.includes(window.selectedDept)) {
+                    window.selectedDept = sortedDepts[0] || null;
                 }
 
-                renderDateSelectUI(sortedDates);
-                renderSlotsByDateUI();
-
-                if (window.adminEditingTarget) {
-                    renderAdminSlotsGrid();
-                }
+                renderDeptSelectUI(sortedDepts);
+                updateDateOptionsByUserSelection();
             });
+        }
+
+        function renderDeptSelectUI(depts) {
+            const select = document.getElementById('select-dept');
+            if (select) {
+                select.innerHTML = depts.map(d => `<option value="${d}" ${d === window.selectedDept ? 'selected' : ''}>🏢 Bộ phận: ${d}</option>`).join('');
+            }
+        }
+
+        window.handleDeptChange = function(deptStr) {
+            window.selectedDept = deptStr;
+            window.selectedDate = null;
+            window.selectedPeriod = null;
+            window.selectedSlot = null;
+            updateDateOptionsByUserSelection();
+        };
+
+        function updateDateOptionsByUserSelection() {
+            const filteredByDept = window.selectedDept === 'Tất cả' ? allSlotsList : allSlotsList.filter(s => extractSlotDept(s) === window.selectedDept);
+            const datesSet = new Set();
+            filteredByDept.forEach(s => {
+                const d = extractSlotDate(s);
+                if (d) datesSet.add(d);
+            });
+            const sortedDates = Array.from(datesSet).sort();
+
+            if (!window.selectedDate || !sortedDates.includes(window.selectedDate)) {
+                window.selectedDate = sortedDates[0] || null;
+            }
+
+            renderDateSelectUI(sortedDates);
+            updatePeriodOptionsByUserSelection();
         }
 
         function renderDateSelectUI(dates) {
@@ -459,6 +564,46 @@
 
         window.handleDateChange = function(dateStr) {
             window.selectedDate = dateStr;
+            window.selectedPeriod = null;
+            window.selectedSlot = null;
+            updatePeriodOptionsByUserSelection();
+        };
+
+        function updatePeriodOptionsByUserSelection() {
+            const filtered = allSlotsList.filter(s => {
+                const matchDept = window.selectedDept === 'Tất cả' || extractSlotDept(s) === window.selectedDept;
+                const matchDate = extractSlotDate(s) === window.selectedDate;
+                return matchDept && matchDate;
+            });
+
+            const periodSet = new Set();
+            filtered.forEach(s => periodSet.add(extractSlotPeriod(s)));
+            let sortedPeriods = Array.from(periodSet).sort();
+
+            if (window.selectedDept === 'Tất cả' || sortedPeriods.length > 1) {
+                if (!sortedPeriods.includes('Tất cả')) {
+                    sortedPeriods.unshift('Tất cả');
+                }
+            }
+
+            if (!window.selectedPeriod || !sortedPeriods.includes(window.selectedPeriod)) {
+                window.selectedPeriod = sortedPeriods[0] || 'Tất cả';
+            }
+
+            renderPeriodSelectUI(sortedPeriods);
+            renderSlotsByDateUI();
+        }
+
+        function renderPeriodSelectUI(periods) {
+            const select = document.getElementById('select-period');
+            if (select) {
+                select.innerHTML = periods.map(p => `<option value="${p}" ${p === window.selectedPeriod ? 'selected' : ''}>☀️ Buổi ${p}</option>`).join('');
+            }
+        }
+
+        window.handlePeriodChange = function(periodStr) {
+            window.selectedPeriod = periodStr;
+            window.selectedSlot = null;
             renderSlotsByDateUI();
         };
 
@@ -467,18 +612,26 @@
             if (!container) return;
             container.innerHTML = '';
 
-            if (!window.selectedDate) return;
+            if (!window.selectedDept || !window.selectedDate || !window.selectedPeriod) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-3 text-center py-6">Vui lòng chọn đầy đủ các bước phía trên.</p>`;
+                return;
+            }
 
-            const filteredSlots = allSlotsList.filter(s => extractSlotDate(s) === window.selectedDate);
+            const filteredSlots = allSlotsList.filter(s => {
+                const matchDept = window.selectedDept === 'Tất cả' || extractSlotDept(s) === window.selectedDept;
+                const matchDate = extractSlotDate(s) === window.selectedDate;
+                const matchPeriod = window.selectedPeriod === 'Tất cả' || extractSlotPeriod(s) === window.selectedPeriod;
+                return matchDept && matchDate && matchPeriod;
+            });
+
             const deadlineExpired = isDeadlinePassed();
 
             if (filteredSlots.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-6">Không có khung giờ cho ngày này.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-3 text-center py-6">Không tìm thấy khung giờ phù hợp.</p>`;
                 return;
             }
 
             filteredSlots.forEach(slot => {
-                // TÍNH SỐ NGUỜI ĐĂNG KÝ THỰC TẾ TỪ SLOTCOUNTMAP
                 const registeredCount = slotCountMap[slot.id] || 0;
                 const maxCapacity = slot.max_capacity || 3;
                 const remaining = maxCapacity - registeredCount;
@@ -488,9 +641,11 @@
                 const isSelected = (window.selectedSlot && window.selectedSlot.id === slot.id) || (!window.selectedSlot && isMyCurrentSlot);
 
                 const timeDisplay = extractSlotTime(slot, window.selectedDate);
+                const deptDisplay = extractSlotDept(slot);
+                const periodDisplay = extractSlotPeriod(slot);
 
                 const div = document.createElement('div');
-                div.className = `p-3.5 border rounded-xl flex items-center justify-between ${
+                div.className = `p-3 border rounded-xl flex items-center justify-between transition ${
                     deadlineExpired || isFull ? 'bg-slate-100 opacity-50 cursor-not-allowed' :
                     isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 cursor-pointer' : 'bg-white border-slate-200 hover:border-blue-300 cursor-pointer'
                 }`;
@@ -500,17 +655,18 @@
                 }
 
                 div.innerHTML = `
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2.5">
                         <input type="radio" name="slot" ${isSelected ? 'checked' : ''} ${deadlineExpired || isFull ? 'disabled' : ''}>
                         <div>
-                            <p class="text-xs font-bold text-slate-800">⏰ ${timeDisplay} ${isMyCurrentSlot ? '<span class="text-blue-600 font-normal">(Hiện tại)</span>' : ''}</p>
-                            <p class="text-[10px] ${isFull ? 'text-red-500 font-bold' : 'text-slate-400'}">
-                                ${isFull ? 'Đã hết chỗ (3/3 người)' : `Còn trống ${Math.max(0, remaining)} chỗ`}
+                            <p class="text-xs font-bold text-slate-800">⏰ ${timeDisplay}</p>
+                            <p class="text-[10px] text-slate-400 font-medium">🏢 ${deptDisplay} • ${periodDisplay}</p>
+                            <p class="text-[10px] ${isFull ? 'text-red-500 font-bold' : 'text-slate-500'}">
+                                ${isFull ? 'Đã hết chỗ' : `Trống ${Math.max(0, remaining)}/3 chỗ`}
                             </p>
                         </div>
                     </div>
                     <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${isFull ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}">
-                        ${isFull ? 'Đầy' : 'Còn chỗ'}
+                        ${isFull ? 'Đầy' : 'Còn'}
                     </span>
                 `;
                 container.appendChild(div);
@@ -535,7 +691,7 @@
 
         // 3. ĐĂNG KÝ VẬN HÀNH BỞI NHÂN VIÊN
         window.submitBooking = async function() {
-            if (isDeadlinePassed()) { alert("Đã qua hạn đăng ký!"); return; }
+            if (isDeadlinePassed()) return;
             if (!window.selectedSlot || !window.currentUser) return;
 
             const btn = document.getElementById('btn-submit-booking');
@@ -557,19 +713,19 @@
         };
 
         async function processSlotChange(empId, empName, empTeam, newSlot) {
-            const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))}`;
+            const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))} (${extractSlotDept(newSlot)})`;
             
-            // LƯU ĐẦY ĐỦ TRỰC TIẾP VÀO BẢNG REGISTRATIONS
             await setDoc(doc(db, "registrations", empId), {
                 emp_id: empId,
                 name: empName || '',
                 team: empTeam || '',
+                department: extractSlotDept(newSlot),
+                period: extractSlotPeriod(newSlot),
                 slot_id: newSlot.id,
                 slot_label: slotLabelText,
                 updated_at: new Date()
             }, { merge: true });
 
-            // ĐỒNG BỘ ĐẾM VÀO COLLECTION SLOTS
             const newCount = (slotCountMap[newSlot.id] || 0) + 1;
             await setDoc(doc(db, "slots", newSlot.id), { registered_count: newCount }, { merge: true });
         }
@@ -583,7 +739,9 @@
 
         window.logout = function() {
             window.currentUser = null;
+            window.selectedDept = null;
             window.selectedDate = null;
+            window.selectedPeriod = null;
             window.selectedSlot = null;
             window.existingBooking = null;
             document.getElementById('emp-info-box').classList.add('hidden');
@@ -592,24 +750,20 @@
         };
 
         // 4. TRANG ADMIN QUẢN LÝ
-        // CẬP NHẬT HÀM NÚT TRANG ADMIN / VỀ TRANG CHỦ
-window.toggleAdminView = function() {
-    const adminScreen = document.getElementById('screen-admin');
-    
-    // Nếu đang ở màn hình Admin -> Bấm nút sẽ chuyển về Màn hình Đăng nhập Nhân viên
-    if (!adminScreen.classList.contains('hidden')) {
-        showScreen('screen-login');
-        document.getElementById('admin-btn-text').innerText = "Trang Admin";
-        return;
-    }
+        window.toggleAdminView = function() {
+            const adminScreen = document.getElementById('screen-admin');
+            if (!adminScreen.classList.contains('hidden')) {
+                showScreen('screen-login');
+                document.getElementById('admin-btn-text').innerText = "Trang Admin";
+                return;
+            }
 
-    // Nếu đang ở ngoài -> Kiểm tra đăng nhập Admin
-    if (auth.currentUser) {
-        showAdminDashboard();
-    } else {
-        document.getElementById('modal-admin-login').classList.remove('hidden');
-    }
-};
+            if (auth.currentUser) {
+                showAdminDashboard();
+            } else {
+                document.getElementById('modal-admin-login').classList.remove('hidden');
+            }
+        };
 
         window.closeAdminLoginModal = function() {
             document.getElementById('modal-admin-login').classList.add('hidden');
@@ -655,13 +809,18 @@ window.toggleAdminView = function() {
                 const nameDisplay = item.name || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].name : '--');
                 const teamDisplay = item.team || (employeesMap[item.emp_id] ? employeesMap[item.emp_id].team : '--');
 
+                const slotObj = allSlotsList.find(s => s.id === item.slot_id);
+                const deptDisplay = item.department || (slotObj ? extractSlotDept(slotObj) : extractSlotDept({ label: item.slot_label }));
+                const cleanSlotDisplay = getCleanSlotLabel(item.slot_label);
+
                 return `
                     <tr class="hover:bg-slate-50">
                         <td class="p-3 text-slate-400">${index + 1}</td>
                         <td class="p-3 font-bold text-blue-600">${item.emp_id}</td>
                         <td class="p-3 font-medium text-slate-800">${nameDisplay}</td>
                         <td class="p-3 text-slate-600">${teamDisplay}</td>
-                        <td class="p-3 font-semibold text-emerald-700">${item.slot_label || '--'}</td>
+                        <td class="p-3 font-semibold text-indigo-600">${deptDisplay}</td>
+                        <td class="p-3 font-semibold text-emerald-700">${cleanSlotDisplay}</td>
                         <td class="p-3 text-center">
                             <button onclick="openAdminEditModal('${item.emp_id}', '${nameDisplay}', '${item.slot_id || ''}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition text-[11px]">
                                 <i class="fa-solid fa-pen-to-square mr-1"></i>Sửa Lịch
@@ -672,9 +831,7 @@ window.toggleAdminView = function() {
             }).join('');
         }
 
-        // =========================================================================
         // MODAL ADMIN SỬA LỊCH
-        // =========================================================================
         window.openAdminEditModal = function(empId, empName, currentSlotId) {
             const empInfo = employeesMap[empId] || {};
             const realName = empName && empName !== '--' ? empName : (empInfo.name || empId);
@@ -688,29 +845,87 @@ window.toggleAdminView = function() {
             const currentSlotObj = allSlotsList.find(s => s.id === currentSlotId);
             window.adminSelectedSlot = currentSlotObj || null;
 
+            const deptSet = new Set();
+            allSlotsList.forEach(s => deptSet.add(extractSlotDept(s)));
+            const sortedDepts = Array.from(deptSet).sort();
+            if (!sortedDepts.includes('Tất cả')) sortedDepts.unshift('Tất cả');
+
+            if (currentSlotObj) {
+                window.adminSelectedDept = extractSlotDept(currentSlotObj);
+                window.adminSelectedDate = extractSlotDate(currentSlotObj);
+                window.adminSelectedPeriod = extractSlotPeriod(currentSlotObj);
+            } else {
+                window.adminSelectedDept = sortedDepts[0] || 'Tất cả';
+            }
+
+            const selectDept = document.getElementById('admin-edit-dept-select');
+            selectDept.innerHTML = sortedDepts.map(d => `<option value="${d}" ${d === window.adminSelectedDept ? 'selected' : ''}>🏢 ${d}</option>`).join('');
+
+            updateAdminDateOptions();
+
+            document.getElementById('modal-admin-edit').classList.remove('hidden');
+        };
+
+        window.handleAdminDeptChange = function(deptStr) {
+            window.adminSelectedDept = deptStr;
+            window.adminSelectedDate = null;
+            window.adminSelectedPeriod = null;
+            window.adminSelectedSlot = null;
+            updateAdminDateOptions();
+        };
+
+        function updateAdminDateOptions() {
+            const filteredByDept = window.adminSelectedDept === 'Tất cả' ? allSlotsList : allSlotsList.filter(s => extractSlotDept(s) === window.adminSelectedDept);
             const datesSet = new Set();
-            allSlotsList.forEach(s => {
+            filteredByDept.forEach(s => {
                 const d = extractSlotDate(s);
                 if (d) datesSet.add(d);
             });
             const sortedDates = Array.from(datesSet).sort();
 
-            if (currentSlotObj) {
-                window.adminSelectedDate = extractSlotDate(currentSlotObj) || sortedDates[0];
-            } else {
+            if (!window.adminSelectedDate || !sortedDates.includes(window.adminSelectedDate)) {
                 window.adminSelectedDate = sortedDates[0] || null;
             }
 
             const selectDate = document.getElementById('admin-edit-date-select');
-            selectDate.innerHTML = sortedDates.map(d => `<option value="${d}" ${d === window.adminSelectedDate ? 'selected' : ''}>📅 Ngày ${d}</option>`).join('');
+            selectDate.innerHTML = sortedDates.map(d => `<option value="${d}" ${d === window.adminSelectedDate ? 'selected' : ''}>📅 ${d}</option>`).join('');
 
-            renderAdminSlotsGrid();
-
-            document.getElementById('modal-admin-edit').classList.remove('hidden');
-        };
+            updateAdminPeriodOptions();
+        }
 
         window.handleAdminDateChange = function(dateStr) {
             window.adminSelectedDate = dateStr;
+            window.adminSelectedPeriod = null;
+            window.adminSelectedSlot = null;
+            updateAdminPeriodOptions();
+        };
+
+        function updateAdminPeriodOptions() {
+            const filtered = allSlotsList.filter(s => {
+                const matchDept = window.adminSelectedDept === 'Tất cả' || extractSlotDept(s) === window.adminSelectedDept;
+                const matchDate = extractSlotDate(s) === window.adminSelectedDate;
+                return matchDept && matchDate;
+            });
+            const periodSet = new Set();
+            filtered.forEach(s => periodSet.add(extractSlotPeriod(s)));
+            let sortedPeriods = Array.from(periodSet).sort();
+
+            if (window.adminSelectedDept === 'Tất cả' || sortedPeriods.length > 1) {
+                if (!sortedPeriods.includes('Tất cả')) sortedPeriods.unshift('Tất cả');
+            }
+
+            if (!window.adminSelectedPeriod || !sortedPeriods.includes(window.adminSelectedPeriod)) {
+                window.adminSelectedPeriod = sortedPeriods[0] || 'Tất cả';
+            }
+
+            const selectPeriod = document.getElementById('admin-edit-period-select');
+            selectPeriod.innerHTML = sortedPeriods.map(p => `<option value="${p}" ${p === window.adminSelectedPeriod ? 'selected' : ''}>☀️ ${p}</option>`).join('');
+
+            renderAdminSlotsGrid();
+        }
+
+        window.handleAdminPeriodChange = function(periodStr) {
+            window.adminSelectedPeriod = periodStr;
             window.adminSelectedSlot = null;
             renderAdminSlotsGrid();
         };
@@ -720,15 +935,20 @@ window.toggleAdminView = function() {
             if (!grid) return;
             grid.innerHTML = '';
 
-            if (!window.adminSelectedDate) {
-                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Đang tải danh sách khung giờ...</p>`;
+            if (!window.adminSelectedDept || !window.adminSelectedDate || !window.adminSelectedPeriod) {
+                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Vui lòng chọn đầy đủ thông tin.</p>`;
                 return;
             }
 
-            const filteredSlots = allSlotsList.filter(s => extractSlotDate(s) === window.adminSelectedDate);
+            const filteredSlots = allSlotsList.filter(s => {
+                const matchDept = window.adminSelectedDept === 'Tất cả' || extractSlotDept(s) === window.adminSelectedDept;
+                const matchDate = extractSlotDate(s) === window.adminSelectedDate;
+                const matchPeriod = window.adminSelectedPeriod === 'Tất cả' || extractSlotPeriod(s) === window.adminSelectedPeriod;
+                return matchDept && matchDate && matchPeriod;
+            });
 
             if (filteredSlots.length === 0) {
-                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Không có khung giờ nào cho ngày này.</p>`;
+                grid.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-4">Không có khung giờ tương ứng.</p>`;
                 return;
             }
 
@@ -756,7 +976,7 @@ window.toggleAdminView = function() {
                         </div>
                     </div>
                     <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${regCount >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
-                        Đã đăng ký: ${regCount}/3
+                        Đăng ký: ${regCount}/3
                     </span>
                 `;
                 grid.appendChild(div);
@@ -770,12 +990,7 @@ window.toggleAdminView = function() {
         };
 
         window.saveAdminSlotEdit = async function() {
-            if (!window.adminEditingTarget) return;
-
-            if (!window.adminSelectedSlot) {
-                alert("Vui lòng nhấp chọn 1 khung giờ mendan mới!");
-                return;
-            }
+            if (!window.adminEditingTarget || !window.adminSelectedSlot) return;
 
             const btnSave = document.getElementById('btn-save-admin-edit');
             btnSave.disabled = true;
@@ -788,14 +1003,10 @@ window.toggleAdminView = function() {
 
             try {
                 await processSlotChange(empId, empName, empTeam, newSlot);
-
-                const slotLabelText = newSlot.label || `${extractSlotDate(newSlot)} ${extractSlotTime(newSlot, extractSlotDate(newSlot))}`;
-                alert(`Thành công: Đã đổi lịch cho NV ${empId} (${empName}) sang khung giờ: ${slotLabelText}`);
                 closeAdminEditModal();
                 showAdminDashboard();
             } catch (err) {
                 console.error("Lỗi Admin sửa lịch:", err);
-                alert("Lỗi khi sửa lịch: " + (err.message || err));
             } finally {
                 btnSave.disabled = false;
                 btnSave.innerText = "Lưu Đổi Lịch";
@@ -804,22 +1015,32 @@ window.toggleAdminView = function() {
 
         window.filterAdminTable = function() {
             const keyword = document.getElementById('admin-search').value.toLowerCase();
-            const filtered = allRegistrations.filter(r => 
-                r.emp_id.toLowerCase().includes(keyword) || 
-                (r.name && r.name.toLowerCase().includes(keyword)) ||
-                (r.team && r.team.toLowerCase().includes(keyword))
-            );
+            const filtered = allRegistrations.filter(r => {
+                const slotObj = allSlotsList.find(s => s.id === r.slot_id);
+                const dept = r.department || (slotObj ? extractSlotDept(slotObj) : extractSlotDept({ label: r.slot_label }));
+                return r.emp_id.toLowerCase().includes(keyword) || 
+                       (r.name && r.name.toLowerCase().includes(keyword)) ||
+                       (r.team && r.team.toLowerCase().includes(keyword)) ||
+                       (dept && dept.toLowerCase().includes(keyword));
+            });
             renderAdminTable(filtered);
         };
 
         window.exportToExcel = function() {
-            if (allRegistrations.length === 0) { alert("Chưa có dữ liệu đăng ký!"); return; }
-            const excelData = allRegistrations.map(r => ({
-                'MÃ NHÂN VIÊN': r.emp_id,
-                'HỌ VÀ TÊN': r.name || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].name : ''),
-                'CHUYỀN': r.team || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].team : ''),
-                'KHUNG GIỜ': r.slot_label
-            }));
+            if (allRegistrations.length === 0) return;
+            const excelData = allRegistrations.map(r => {
+                const slotObj = allSlotsList.find(s => s.id === r.slot_id);
+                const deptDisplay = r.department || (slotObj ? extractSlotDept(slotObj) : extractSlotDept({ label: r.slot_label }));
+                const periodDisplay = r.period || (slotObj ? extractSlotPeriod(slotObj) : 'SÁNG');
+                return {
+                    'MÃ NHÂN VIÊN': r.emp_id,
+                    'HỌ VÀ TÊN': r.name || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].name : ''),
+                    'CHUYỀN': r.team || (employeesMap[r.emp_id] ? employeesMap[r.emp_id].team : ''),
+                    'BỘ PHẬN': deptDisplay,
+                    'BUỔI': periodDisplay,
+                    'KHUNG GIỜ': getCleanSlotLabel(r.slot_label)
+                };
+            });
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "申込表");
